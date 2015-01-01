@@ -4,12 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace localserver
+namespace vpnagent
 {
-    class Program
+    class Agent
     {
-        static void Main(string[] args)
-        {
-        }
     }
 }
