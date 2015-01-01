@@ -4,18 +4,25 @@
 #include "stdafx.h"
 #include "vpnlib.h"
 
-#define LOCLSVR_PORT 8123
+#define VPNAGENT_PORT 8123
+#define OP_CONNECT 1
+#define OP_CONNECTOK 2
 
+#pragma pack(push)
+#pragma pack(1)
 struct vpnhdr
 {
-	u_long	ip;
-	u_short port;
+	unsigned int ip;
+	unsigned short port;
+	unsigned char op;
 };
+#pragma pack(pop)
 
-void fillvpnhdr(void* buf, const sockaddr* addr)
+void fillvpnhdr(void* buf, const sockaddr* addr, unsigned char op = 0)
 {
 	((vpnhdr*)buf)->ip = ((sockaddr_in*)addr)->sin_addr.S_un.S_addr;
 	((vpnhdr*)buf)->port = ((sockaddr_in*)addr)->sin_port;
+	((vpnhdr*)buf)->op = op;
 }
 
 void filladdr(sockaddr* addr, const void* buf)
@@ -31,7 +38,7 @@ sockaddr_in loclsvr()
 	to.sin_family = AF_INET;
 	to.sin_addr.S_un.S_un_b.s_b1 = 127;
 	to.sin_addr.S_un.S_un_b.s_b4 = 1;
-	to.sin_port = htons(LOCLSVR_PORT);
+	to.sin_port = htons(VPNAGENT_PORT);
 	return to;
 }
 
@@ -105,6 +112,10 @@ _connect(
 	int ret = connect(s, lcsto, lcstolen);
 	if (ret < 0)
 		return ret;
+
+	vpnhdr hdr;
+	fillvpnhdr(&hdr, name, OP_CONNECT);
+	send(s, (char*)&hdr, sizeof(hdr), 0);
 
 	if (1 > recv(s, buf, 32, 0))
 		return -1;

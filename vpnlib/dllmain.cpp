@@ -15,7 +15,5 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		break;
 	}
 	return TRUE;
-
-	sendto
 }
 
