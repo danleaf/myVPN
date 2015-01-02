@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpnlib", "vpnlib\vpnlib.vcx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vpnagent", "vpnagent\vpnagent.csproj", "{DFD2D8A3-B52D-42A3-82AD-086EF8596938}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vpnserver", "vpnserver\vpnserver.csproj", "{C504603E-EE92-41E2-87D5-B4D3E93FA481}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,16 @@ Global
 		{DFD2D8A3-B52D-42A3-82AD-086EF8596938}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{DFD2D8A3-B52D-42A3-82AD-086EF8596938}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{DFD2D8A3-B52D-42A3-82AD-086EF8596938}.Release|Win32.ActiveCfg = Release|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
