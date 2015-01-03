@@ -8,13 +8,18 @@ using System.Net.Sockets;
 
 namespace vpnagent
 {
-    class UdpAgent
+    partial class Agent
     {
-        Socket sudp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-        public UdpAgent()
+        unsafe private void ProcessReceiveFromData(byte[] buffer, int len, IPEndPoint ep)
         {
-            sudp.Bind(new IPEndPoint(IPAddress.Any, VPNConsts.VPNAGENT_PORT));
+            fixed (byte* pBuf = buffer)
+            {
+                VPNHeader* hdr = (VPNHeader*)pBuf;
+                hdr->sip = ac.VirtualIP;
+                hdr->sport = (ushort)ep.Port;
+
+                ac.Send(buffer, sizeof(VPNHeader));
+            }
         }
     }
 }

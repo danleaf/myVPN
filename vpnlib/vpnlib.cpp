@@ -7,28 +7,35 @@
 #define VPNAGENT_PORT 8123
 #define OP_CONNECT 1
 #define OP_CONNECTOK 2
+#define PROT_UDP 1
+#define PROT_TCP 2
 
 #pragma pack(push)
 #pragma pack(1)
 struct vpnhdr
 {
-	unsigned int ip;
-	unsigned short port;
-	unsigned char op;
+	unsigned int	sip;
+	unsigned short	sport;
+	unsigned int	dip;
+	unsigned short	dport;
+	unsigned char	prot;
+	unsigned char	op;
 };
 #pragma pack(pop)
 
-void fillvpnhdr(void* buf, const sockaddr* addr, unsigned char op = 0)
+void fillvpnhdr(void* buf, const sockaddr* addr, unsigned char prot, unsigned char op = 0)
 {
-	((vpnhdr*)buf)->ip = ((sockaddr_in*)addr)->sin_addr.S_un.S_addr;
-	((vpnhdr*)buf)->port = ((sockaddr_in*)addr)->sin_port;
+	memset(&buf, 0, sizeof(vpnhdr));
+	((vpnhdr*)buf)->dip = ((sockaddr_in*)addr)->sin_addr.S_un.S_addr;
+	((vpnhdr*)buf)->dport = ((sockaddr_in*)addr)->sin_port;
+	((vpnhdr*)buf)->prot = prot;
 	((vpnhdr*)buf)->op = op;
 }
 
 void filladdr(sockaddr* addr, const void* buf)
 {
-	((sockaddr_in*)addr)->sin_addr.S_un.S_addr = ((vpnhdr*)buf)->ip;
-	((sockaddr_in*)addr)->sin_port = ((vpnhdr*)buf)->port;
+	((sockaddr_in*)addr)->sin_addr.S_un.S_addr = ((vpnhdr*)buf)->sip;
+	((sockaddr_in*)addr)->sin_port = ((vpnhdr*)buf)->sport;
 }
 
 sockaddr_in loclsvr()
@@ -61,7 +68,7 @@ _sendto(
 	char* newbuf = new char[newlen];
 
 	memcpy(newbuf + sizeof(vpnhdr), buf, len);
-	fillvpnhdr(newbuf, to);
+	fillvpnhdr(newbuf, to, PROT_UDP);
 
 	do{
 		int ret = sendto(s, newbuf, newlen, 0, lcsto, lcstolen);
@@ -108,15 +115,15 @@ _connect(
 	_In_ int namelen
 )
 {
-	char buf[32];
 	int ret = connect(s, lcsto, lcstolen);
 	if (ret < 0)
 		return ret;
 
 	vpnhdr hdr;
-	fillvpnhdr(&hdr, name, OP_CONNECT);
+	fillvpnhdr(&hdr, name, PROT_TCP, OP_CONNECT);
 	send(s, (char*)&hdr, sizeof(hdr), 0);
 
+	char buf[32];
 	if (1 > recv(s, buf, 32, 0))
 		return -1;
 	if (memcmp(buf, "CONNECTOK", 9))
