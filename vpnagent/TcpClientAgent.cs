@@ -65,19 +65,14 @@ namespace vpnagent
 
         unsafe private void OnNetTcpToClient(byte[] buffer, byte* pBuffer, int len) 
         {
-
-        }
-
-        unsafe private void OnNetServerData(byte[] buffer, byte* pBuffer, int len)
-        {
             VPNHeader* hdr = (VPNHeader*)pBuffer;
             Socket s = sClients[hdr->DestPort];
 
-            if (hdr->Signature == VPNConsts.OP_CONNECTOK)
+            if (hdr->Operation == VPNConsts.OP_CONNECTOK)
             {
                 s.Send(Encoding.ASCII.GetBytes("CONNECTOK"));
             }
-            else if (hdr->Signature == VPNConsts.OP_CONNECTNOK)
+            else if (hdr->Operation == VPNConsts.OP_CONNECTNOK)
             {
                 s.Send(Encoding.ASCII.GetBytes("FAILED"));
             }

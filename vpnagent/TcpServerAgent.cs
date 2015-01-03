@@ -16,28 +16,28 @@ namespace vpnagent
         {
             VPNHeader* hdr = (VPNHeader*)pBuffer;
 
-            if(hdr->Operation == VPNConsts.OP_CONNECT)
+            if (hdr->Operation == VPNConsts.OP_CONNECT)
             {
+                Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
-                    Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     s.Connect(new IPEndPoint(VPNConsts.LOOPBACK, hdr->DestPort));
-
                     epMap.Add(hdr->SourceEndPoint, s);
+                    hdr->Signature = VPNConsts.OP_CONNECTOK;
                 }
-                catch(Exception)
+                catch (Exception)
                 {
-                    uint dip = hdr->SourceIP;
-                    ushort dport = hdr->SourcePort;
-
                     hdr->Signature = VPNConsts.OP_CONNECTNOK;
-                    hdr->SourceIP = hdr->DestIP;
-                    hdr->SourcePort = hdr->SourcePort;
-                    hdr->DestIP = dip;
-                    hdr->DestPort = dport;
-
-                    ac.Send(buffer, sizeof(VPNHeader));
                 }
+
+                uint sip = hdr->SourceIP;
+                ushort sport = hdr->SourcePort;
+
+                hdr->DestIP = sip;
+                hdr->DestPort = sport;
+                hdr->SourceIP = hdr->DestIP;
+                hdr->SourcePort = hdr->DestPort;
+                ac.Send(buffer, sizeof(VPNHeader));
             }
             else
             {
@@ -47,7 +47,7 @@ namespace vpnagent
 
                     s.Send(buffer, sizeof(VPNHeader), len - sizeof(VPNHeader), SocketFlags.None);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
