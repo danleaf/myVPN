@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace vpnagent
 {
+    /// <summary>
+    /// Consts
+    /// </summary>
     public static class VPNConsts
     {
         public const int VPNAGENT_PORT = 8123;
