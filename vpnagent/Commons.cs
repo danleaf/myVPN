@@ -22,7 +22,7 @@ namespace vpnagent
         public const byte OP_CONNECTNOK = 3;
         public const byte PROT_UDP = 1;
         public const byte PROT_TCP = 2;
-        public const IPAddress LOOPBACK = IPAddress.Parse("127.0.0.1");
+        public static IPAddress LOOPBACK = IPAddress.Parse("127.0.0.1");
     }
 
     [StructLayout(LayoutKind.Explicit, Pack = 1)]

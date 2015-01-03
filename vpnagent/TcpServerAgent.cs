@@ -10,7 +10,7 @@ namespace vpnagent
 {
     partial class Agent
     {
-        Dictionary<IPEndPoint, Socket> epMap;
+        Dictionary<IPEndPoint, Socket> epMap = new Dictionary<IPEndPoint,Socket>();
 
         unsafe private void OnNetTcpToServer(byte[] buffer, byte* pBuffer, int len)
         {
