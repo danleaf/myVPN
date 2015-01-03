@@ -15,11 +15,16 @@ namespace vpnagent
             fixed (byte* pBuf = buffer)
             {
                 VPNHeader* hdr = (VPNHeader*)pBuf;
-                hdr->sip = ac.VirtualIP;
-                hdr->sport = (ushort)ep.Port;
+                hdr->SourceIP = ac.VirtualIP;
+                hdr->SourcePort = (ushort)ep.Port;
 
                 ac.Send(buffer, sizeof(VPNHeader));
             }
+        }
+
+        unsafe private void OnNetUdpReceive(byte[] buffer, byte* pBuffer, int len)
+        {
+
         }
     }
 }

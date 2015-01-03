@@ -56,23 +56,28 @@ namespace vpnagent
             fixed (byte* pBuf = buffer)
             {
                 VPNHeader* hdr = (VPNHeader*)pBuf;
-                hdr->sip = ac.VirtualIP;
-                hdr->sport = (ushort)((IPEndPoint)s.RemoteEndPoint).Port;
+                hdr->SourceIP = ac.VirtualIP;
+                hdr->SourcePort = (ushort)((IPEndPoint)s.RemoteEndPoint).Port;
 
                 ac.Send(buffer, sizeof(VPNHeader));
             }
         }
 
+        unsafe private void OnNetTcpToClient(byte[] buffer, byte* pBuffer, int len) 
+        {
+
+        }
+
         unsafe private void OnNetServerData(byte[] buffer, byte* pBuffer, int len)
         {
             VPNHeader* hdr = (VPNHeader*)pBuffer;
-            Socket s = sClients[hdr->dport];
+            Socket s = sClients[hdr->DestPort];
 
-            if (hdr->op == VPNConsts.OP_CONNECTOK)
+            if (hdr->Signature == VPNConsts.OP_CONNECTOK)
             {
                 s.Send(Encoding.ASCII.GetBytes("CONNECTOK"));
             }
-            else if (hdr->op == VPNConsts.OP_CONNECTNOK)
+            else if (hdr->Signature == VPNConsts.OP_CONNECTNOK)
             {
                 s.Send(Encoding.ASCII.GetBytes("FAILED"));
             }

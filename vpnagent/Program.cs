@@ -11,10 +11,6 @@ namespace vpnagent
     {
         static void Main(string[] args)
         {
-            TcpClientAgent ta = new TcpClientAgent();
-            ta.Run();
-            Thread.Sleep(3000);
-            ta.End();
         }
     }
 }
