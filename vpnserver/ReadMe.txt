@@ -1,98 +1,82 @@
-`timescale 1us/1ns
-module clock(clk);
-  output reg clk;
+module clock
+#(
+parameter KHZ=50000
+)
+(
+  input clk,
+  output reg [4:0] h,
+  output reg [5:0] m,s,
+  output reg [9:0] ms
+);
   
-  initial
-  begin
-    clk = 0;
-  end
+	reg [31:0] counter;
+ 	reg clkms,clks, clkm, clkh;
+  
+	initial
+	begin
+		h = 0;
+		m = 0;
+		s = 0;
+		ms = 0;
+		clkms = 0;
+		clks = 0;
+		clkm = 0;
+		clkh = 0;
+		counter = 0;
+	end
+	
+	
+	always @ (posedge clk)
+	begin
+		if(counter == KHZ - 1) 
+			counter <= 0;
+		else
+			counter <= counter + 1;
 
-  always  #5000 clk = ~clk;  
+		clkms <= (counter == KHZ - 1);
+	end  
+
+
+	always @ (posedge clkms)
+	begin
+		if(ms == 10'd999) 
+			ms <= 0;
+		else
+			ms <= ms + 10'd1;
+
+		clks <= (ms == 10'd999);
+	end  
+
+	always @ (posedge clks)
+	begin
+		if(s == 6'd59) 
+			s <= 0;
+		else 
+			s <= s + 6'd1;
+
+		clkm <= (s == 6'd59);
+	end  
+
+	always @ (posedge clkm)
+	begin
+		if(m == 6'd59) 
+			m <= 0;
+		else
+			m <= m + 6'd1;
+
+		clkh <= (m == 6'd59);
+	end  
+
+	always @ (posedge clkh)
+	begin
+		if(h == 5'd23) 
+			h <= 0;
+		else
+			h <= h + 5'd1;
+	end 
 endmodule 
 
 
-`timescale 1us/1ns
-module watch(clk, h, m, s, ms);
-  input clk;
-  output reg [4:0] h;
-  output reg [5:0] m,s;
-  output reg [6:0] ms;
-  reg clks, clkm, clkh;
-  
-  parameter INIT = 1;
-  parameter COUNT_TIME = 1;
-  parameter SET_TIME = 1;
-  
-  initial
-  begin
-    h = 0;
-    m = 0;
-    s = 0;
-    ms = 0;
-    clks = 0;
-    clkm = 0;
-    clkh = 0;
-  end
-
-
-  always @ (posedge clk)
-  begin
-    if(ms == 7'd99) 
-      ms <= 0;
-    else
-      ms <= ms + 7'd1;
-
-    clks <= (ms == 7'd99);
-  end  
-
-  always @ (posedge clks)
-  begin
-    if(s == 6'd59) 
-      s <= 0;
-    else 
-      s <= s + 6'd1;
-
-    clkm <= (s == 6'd59);
-  end  
-
-  always @ (posedge clkm)
-  begin
-    if(m == 6'd59) 
-      m <= 0;
-    else
-      m <= m + 6'd1;
-
-    clkh <= (m == 6'd59);
-  end  
-
-  always @ (posedge clkh)
-  begin
-    if(h == 5'd23) 
-      h <= 0;
-    else
-      h <= h + 5'd1;
-  end 
-endmodule 
-
-
-`timescale 1us/1ns
-module test(clk, cnt);
-  input clk;
-  output reg [15:0] cnt;
-  
-  initial
-  begin
-	cnt = 0;
-  end
-
-
-  always @ (posedge clk)
-  begin
-	cnt <= cnt + 1;
-  end  
-
-
-endmodule 
 
 `timescale 1us/1ns
 module encode(raw, code);
@@ -118,24 +102,6 @@ module encode(raw, code);
 
 endmodule
 
-`timescale 1us/1ns
-module abcd();
-  wire clk; 
-  wire [4:0] h;
-  wire [5:0] m,s;
-  wire [6:0] ms;
-  
-  wire [7:0] HH,MM,SS,MS; 
-
-  clock i1(clk);
-  watch i2(clk, h, m, s, ms);
-
-  encode i3({2'b0,h}, HH);
-  encode i4({1'b0,m}, MM);
-  encode i5({1'b0,s}, SS);
-  encode i6(ms, MS);
-
-endmodule 
 
 
 
