@@ -18,7 +18,15 @@ namespace vpnagent
         public Agent(VpnAC ac)
         {
             this.ac = ac;
-            ac.RegisterReceiver(new VpnReceiveCallback(this.OnNetReceive));
+            ac.RegisterReceiver(new VpnReceiveCallback(OnNetReceive));
+
+            sudp.Bind(new IPEndPoint(VPNConsts.LOOPBACK, VPNConsts.VPNAGENT_PORT));
+            stcp.Bind(new IPEndPoint(VPNConsts.LOOPBACK, VPNConsts.VPNAGENT_PORT));
+            stcp.Listen(5);
+
+            byte[] buffer = new byte[VPNConsts.BUFFER_SIZE];
+            sudp.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(OnReceiveFrom), buffer);
+            stcp.BeginAccept(new AsyncCallback(OnAccept), null);
         }
 
         unsafe private void OnNetReceive(byte[] buffer, int len)
@@ -48,6 +56,25 @@ namespace vpnagent
             else
             {
                 OnNetTcpToServer(buffer, pBuffer, len);
+            }
+        }
+
+        class StateObject
+        {
+            public byte[] buffer = new byte[VPNConsts.BUFFER_SIZE];
+            public Socket s;
+
+            public StateObject(Socket s)
+            {
+                this.s = s;
+            }
+
+            public int BufferSize
+            {
+                get
+                {
+                    return buffer.Length;
+                }
             }
         }
     }

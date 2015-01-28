@@ -4,13 +4,28 @@ parameter KHZ=50000
 )
 (
   input clk,
-  output reg [4:0] h,
-  output reg [5:0] m,s,
-  output reg [9:0] ms
+  output reg [6:0] num,
+  output reg [7:0] sel
 );
   
+	reg [4:0] h;
+	reg [5:0] m,s;
+	reg [9:0] ms;
 	reg [31:0] counter;
  	reg clkms,clks, clkm, clkh;
+	
+   parameter INIT = 8'b11111111;
+	parameter SHH = 8'b01111111;
+	parameter SHL = 8'b10111111; 
+	parameter SMH = 8'b11011111;
+	parameter SML = 8'b11101111;
+	parameter SSH = 8'b11110111;
+	parameter SSL = 8'b11111011;
+	parameter SMSH = 8'b11111101;
+	parameter SMSL = 8'b11111110;
+	
+	wire [6:0] hh,hl,mh,ml,sh,sl,msh,msl;
+	wire [3:0] _hl,_hh,_mh,_ml,_sh,_sl,_msh,_msl;
   
 	initial
 	begin
@@ -23,6 +38,7 @@ parameter KHZ=50000
 		clkm = 0;
 		clkh = 0;
 		counter = 0;
+		sel = INIT;
 	end
 	
 	
@@ -35,6 +51,21 @@ parameter KHZ=50000
 
 		clkms <= (counter == KHZ - 1);
 	end  
+	
+	always@(sel or hh or hl or mh or ml or sh or sl or msh or msl)
+	begin	
+		case(sel)
+		SHH:num = hh;
+		SHL:num = hl;
+		SMH:num = mh;
+		SML:num = ml;
+		SSH:num = sh;
+		SSL:num = sl;
+		SMSH:num = msh;
+		SMSL:num = msl;
+		default:num = 7'd0;
+		endcase
+	end
 
 
 	always @ (posedge clkms)
@@ -45,6 +76,18 @@ parameter KHZ=50000
 			ms <= ms + 10'd1;
 
 		clks <= (ms == 10'd999);
+		case(sel)
+		INIT:sel <= SHH;
+		SHH:sel <= SHL;
+		SHL:sel <= SMH;
+		SMH:sel <= SML;
+		SML:sel <= SSH;
+		SSH:sel <= SSL;
+		SSL:sel <= SMSH;
+		SMSH:sel <= SMSL;
+		SMSL:sel <= SHH;
+		default:sel <= INIT;
+		endcase
 	end  
 
 	always @ (posedge clks)
@@ -74,33 +117,56 @@ parameter KHZ=50000
 		else
 			h <= h + 5'd1;
 	end 
+	
+	
+	assign _hh = h / 4'd10;
+	assign _hl = h % 4'd10;
+	assign _mh = m / 4'd10;
+	assign _ml = m % 4'd10;
+	assign _sh = s / 4'd10;
+	assign _sl = s % 4'd10;
+	assign _msh = ms / 7'd100;
+	assign _msl = ms / 7'd10 % 7'd10;
+	
+	encode i0(_hh,hh);
+	encode i1(_hl,hl);
+	encode i2(_mh,mh);
+	encode i3(_ml,ml);
+	encode i4(_sh,sh);
+	encode i5(_sl,sl);
+	encode i6(_msh,msh);
+	encode i7(_msl,msl);
+	
 endmodule 
 
-
-
-`timescale 1us/1ns
 module encode(raw, code);
 	input [3:0] raw;
 	output reg [6:0] code;
-  
+  /*
+	0xc0,0xf9,0xa4,0xb0,//0~3
+	0x99,0x92,0x82,0xf8,//4~7
+	0x80,0x90,0x88,0x83,//8~b
+	0xc6,0xa1,0x86,0x8e //c~f
+*/
 	always@(raw)
 	begin
 		case(raw)
-			4'd0: code = 7'b1110111;
-			4'd1: code = 7'b0100100;
-			4'd2: code = 7'b1011101;
-			4'd3: code = 7'b1101101;
-			4'd4: code = 7'b0101110;
-			4'd5: code = 7'b1101011;
-			4'd6: code = 7'b1111011;
-			4'd7: code = 7'b0100101;
-			4'd8: code = 7'b1111111;
-			4'd9: code = 7'b1101111;
-			default: code = 7'b1011011;
+			4'd0: code = 7'hC0;
+			4'd1: code = 7'hF9;
+			4'd2: code = 7'hA4;
+			4'd3: code = 7'hB0;
+			4'd4: code = 7'h99;
+			4'd5: code = 7'h92;
+			4'd6: code = 7'h82;
+			4'd7: code = 7'hF8;
+			4'd8: code = 7'h80;
+			4'd9: code = 7'h90;
+			default: code = 7'h86;
 		endcase
 	end
 
 endmodule
+
 
 
 

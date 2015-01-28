@@ -10,7 +10,7 @@ namespace vpnagent
 {
     partial class Agent
     {
-        Dictionary<IPEndPoint, Socket> epMap = new Dictionary<IPEndPoint,Socket>();
+        Dictionary<IPEndPoint, Socket> virtualClientMap = new Dictionary<IPEndPoint,Socket>();
 
         unsafe private void OnNetTcpToServer(byte[] buffer, byte* pBuffer, int len)
         {
@@ -22,8 +22,11 @@ namespace vpnagent
                 try
                 {
                     s.Connect(new IPEndPoint(VPNConsts.LOOPBACK, hdr->DestPort));
-                    epMap.Add(hdr->SourceEndPoint, s);
+                    virtualClientMap.Add(hdr->SourceEndPoint, s);
                     hdr->Signature = VPNConsts.OP_CONNECTOK;
+
+                    StateObject so = new StateObject(s);
+                    s.BeginReceive(so.buffer, 0, so.BufferSize, SocketFlags.None, new AsyncCallback(OnReceiveClient), so);
                 }
                 catch (Exception)
                 {
@@ -43,7 +46,7 @@ namespace vpnagent
             {
                 try
                 {
-                    Socket s = epMap[hdr->SourceEndPoint];
+                    Socket s = virtualClientMap[hdr->SourceEndPoint];
 
                     s.Send(buffer, sizeof(VPNHeader), len - sizeof(VPNHeader), SocketFlags.None);
                 }
@@ -51,6 +54,31 @@ namespace vpnagent
                 {
                     Console.WriteLine(e.Message);
                 }
+            }
+        }
+
+        private void OnReceiveServer(IAsyncResult ar)
+        {
+            StateObject so = ar.AsyncState as StateObject;
+
+            byte[] buffer = so.buffer;
+            Socket s = so.s;
+
+            int len = s.EndReceive(ar);
+
+            AgentTcpServer(s, buffer, len);
+            s.BeginReceive(so.buffer, 0, VPNConsts.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(OnReceiveClient), so);
+        }
+
+        unsafe private void AgentTcpServer(Socket s, byte[] buffer, int len)
+        {
+            fixed (byte* pBuf = buffer)
+            {
+                VPNHeader* hdr = (VPNHeader*)pBuf;
+                hdr->SourceIP = ac.VirtualIP;
+                hdr->SourcePort = (ushort)((IPEndPoint)s.RemoteEndPoint).Port;
+
+                ac.Send(buffer, sizeof(VPNHeader));
             }
         }
     }

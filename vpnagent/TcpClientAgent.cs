@@ -30,15 +30,15 @@ namespace vpnagent
         private void OnAccept(IAsyncResult ar)
         {
             Socket s = stcp.EndAccept(ar);
+            StateObject so = new StateObject(s);
+            stcp.BeginAccept(new AsyncCallback(OnAccept), null);
+            s.BeginReceive(so.buffer, 0, VPNConsts.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(OnReceiveClient), so);
+
             sClients.Add((ushort)((IPEndPoint)s.RemoteEndPoint).Port, s);
 
-            stcp.BeginAccept(new AsyncCallback(this.OnAccept), null);
-
-            StateObject so = new StateObject(s);
-            s.BeginReceive(so.buffer, 0, VPNConsts.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(this.OnReceive), so);
         }
 
-        private void OnReceive(IAsyncResult ar)
+        private void OnReceiveClient(IAsyncResult ar)
         {
             StateObject so = ar.AsyncState as StateObject;
 
@@ -47,11 +47,11 @@ namespace vpnagent
 
             int len = s.EndReceive(ar);
 
-            ProcessReceiveData(s, buffer, len);
-            s.BeginReceive(so.buffer, 0, VPNConsts.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(this.OnReceive), so);
+            AgentTcpClient(s, buffer, len);
+            s.BeginReceive(so.buffer, 0, VPNConsts.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(OnReceiveClient), so);
         }
 
-        unsafe private void ProcessReceiveData(Socket s, byte[] buffer, int len)
+        unsafe private void AgentTcpClient(Socket s, byte[] buffer, int len)
         {
             fixed (byte* pBuf = buffer)
             {
@@ -79,17 +79,6 @@ namespace vpnagent
             else
             {
                 s.Send(buffer, sizeof(VPNHeader), len - sizeof(VPNHeader), SocketFlags.None);
-            }
-        }
-
-        class StateObject
-        {
-            public byte[] buffer = new byte[VPNConsts.BUFFER_SIZE];
-            public Socket s;
-
-            public StateObject(Socket s)
-            {
-                this.s = s;
             }
         }
     }
