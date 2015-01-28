@@ -104,34 +104,32 @@ endmodule
 
 
 
-
 module fifo
- #(parameter ASIZE = 2,    
+ #(parameter ASIZE = 3,    
    parameter DSIZE = 8)    
 (
     input wclk,rclk,rst,
     input rreq,wreq,    
     input [DSIZE-1:0] wdata,   
-    output [DSIZE-1:0] rdata,
+    output reg [DSIZE-1:0] rdata,
     output reg full,empty
 );
 	wire [ASIZE:0] raddr_next, waddr_next,raddr_next_gray, waddr_next_gray;
-	wire full_next;
+	wire full_next,empty_next;
 	
-	reg [ASIZE:0] raddr,waddr;
+	reg [ASIZE:0] raddr,raddr_gray,waddr,waddr_gray;
 	//reg [ASIZE:0] _raddr_gray_wclk, _waddr_gray_wclk;
 	//reg [ASIZE:0] raddr_gray_wclk, waddr_gray_rclk;
 
 	localparam RAMDEPTH = 1 << ASIZE;
 	reg [DSIZE-1:0] mem [RAMDEPTH-1:0];
 	
-	assign rdata = mem[0];
 	
 	waddrproc #(ASIZE) waddrproc_inst(
 		.req(wreq),
 		.full_now(full),
 		.waddr_now(waddr),
-		.raddr_gray_wclk(3'b110),
+		.raddr_gray_wclk(4'b0),
 		.waddr_next(waddr_next),
 		.waddr_next_gray(waddr_next_gray),
 		.full_next(full_next));
@@ -140,6 +138,7 @@ module fifo
 	if(!rst)
 	begin
 		waddr <= 0;
+		waddr_gray <= 0;
 		full <= 0;
 		//_raddr_gray_wclk <= 0;
 		//raddr_gray_wclk <= 0;
@@ -148,6 +147,7 @@ module fifo
 	begin
 		waddr <= waddr_next;
 		full <= full_next;
+		waddr_gray <= waddr_next_gray;
 		if(wreq && !full)
 		begin 
 			mem[waddr[ASIZE-1:0]] <= wdata;
@@ -156,37 +156,32 @@ module fifo
 		//{raddr_gray_wclk, _raddr_gray} <= {_raddr_gray, raddr_gray};
 	end
 	
-	/*always@(posedge rclk or negedge rst)
+	always@(posedge rclk or negedge rst)
 	begin
 		if(!rst)
 		begin
 			raddr <= 0;
-			_waddr_gray <= 0;
-			waddr_gray_rclk <= 0;
-			rdata <= 0;
+			//_waddr_gray <= 0;
+			//waddr_gray_rclk <= 0;
 		end
 		else
 		begin
-			if(rreq)
-			begin 
-				//rdata <= mem[raddr[ASIZE-1:0]];
-				if(!empty)
-				begin
-					raddr <= raddr + {{ASIZE-1{1'b0}},1'b1};
-				end
+			raddr <= raddr_next;
+			empty <= empty_next;
+			raddr_gray <= raddr_next_gray;
+			if(rreq && !empty)
+			begin
+				rdata <= mem[raddr[ASIZE-1:0]];
 			end
-			else
-				rdata <= {DSIZE{1'bx}};
 			
-			{waddr_gray_rclk, _waddr_gray} <= {_waddr_gray, waddr_gray};
-		empty <= empty0;
+			//{waddr_gray_rclk, _waddr_gray} <= {_waddr_gray, waddr_gray};
 		end
-	end*/
+	end
 
 endmodule
 
 module waddrproc
- #(parameter ASIZE = 2)
+ #(parameter ASIZE = 3)
 (
 	input req,full_now,
 	input [ASIZE:0] waddr_now,raddr_gray_wclk,
@@ -196,8 +191,24 @@ module waddrproc
 	
 	assign waddr_next = full_now ? waddr_now : waddr_now + req;
 	assign waddr_next_gray = (waddr_next >> 1'b1) ^ waddr_next;
-	assign full_next = (waddr_next_gray == {~raddr_gray_wclk[ASIZE:ASIZE-1], raddr_gray_wclk[ASIZE-2:0]} );
+	assign full_next = (waddr_next_gray == {~raddr_gray_wclk[ASIZE:ASIZE-1],raddr_gray_wclk[ASIZE-2:0]});
 	
 endmodule
+
+module raddrproc
+ #(parameter ASIZE = 3)
+(
+	input req,empty_now,
+	input [ASIZE:0] raddr_now,waddr_gray_rclk,
+	output [ASIZE:0] raddr_next,raddr_next_gray,
+	output empty_next
+);
+	
+	assign raddr_next = empty_now ? raddr_now : raddr_now + req;
+	assign raddr_next_gray = (raddr_next >> 1'b1) ^ raddr_next;
+	assign empty_next = (raddr_next == waddr_gray_rclk);
+	
+endmodule
+
 
 
