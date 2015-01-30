@@ -185,7 +185,7 @@ module fifo
 	
 	reg [ASIZE:0] raddr,raddr_gray,waddr,waddr_gray;
 	//reg [ASIZE:0] _raddr_gray_wclk, _waddr_gray_wclk;
-	//reg [ASIZE:0] raddr_gray_wclk, waddr_gray_rclk;
+	reg [ASIZE:0] raddr_gray_wclk, waddr_gray_rclk;
 
 	localparam RAMDEPTH = 1 << ASIZE;
 	reg [DSIZE-1:0] mem [RAMDEPTH-1:0];
@@ -195,10 +195,19 @@ module fifo
 		.req(wreq),
 		.full_now(full),
 		.waddr_now(waddr),
-		.raddr_gray_wclk(4'b0),
+		.raddr_gray_wclk(raddr_gray_wclk),
 		.waddr_next(waddr_next),
 		.waddr_next_gray(waddr_next_gray),
 		.full_next(full_next));
+	
+	raddrproc #(ASIZE) raddrproc_inst(
+		.req(rreq),
+		.empty_now(empty),
+		.raddr_now(raddr),
+		.waddr_gray_rclk(waddr_gray_rclk),
+		.raddr_next(raddr_next),
+		.raddr_next_gray(raddr_next_gray),
+		.empty_next(empty_next));
 	
 	always@(posedge wclk or negedge rst)
 	if(!rst)
@@ -207,7 +216,7 @@ module fifo
 		waddr_gray <= 0;
 		full <= 0;
 		//_raddr_gray_wclk <= 0;
-		//raddr_gray_wclk <= 0;
+		raddr_gray_wclk <= 0;
 	end
 	else
 	begin
@@ -220,6 +229,7 @@ module fifo
 		end
 		
 		//{raddr_gray_wclk, _raddr_gray} <= {_raddr_gray, raddr_gray};
+		raddr_gray_wclk <= raddr_gray;
 	end
 	
 	always@(posedge rclk or negedge rst)
@@ -227,8 +237,9 @@ module fifo
 		if(!rst)
 		begin
 			raddr <= 0;
+			empty <= 1;
 			//_waddr_gray <= 0;
-			//waddr_gray_rclk <= 0;
+			waddr_gray_rclk <= 0;
 		end
 		else
 		begin
@@ -241,6 +252,7 @@ module fifo
 			end
 			
 			//{waddr_gray_rclk, _waddr_gray} <= {_waddr_gray, waddr_gray};
+			waddr_gray_rclk <= waddr_gray;
 		end
 	end
 
@@ -275,6 +287,5 @@ module raddrproc
 	assign empty_next = (raddr_next == waddr_gray_rclk);
 	
 endmodule
-
 
 
