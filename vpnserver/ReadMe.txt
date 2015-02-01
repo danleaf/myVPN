@@ -289,3 +289,84 @@ module raddrproc
 endmodule
 
 
+module redrecv
+#(
+	parameter NEG = 1'b1,
+	parameter CLKMHZ = 50,
+	parameter BOOT = 13500,
+	parameter PULSEWIDTH = 565,
+	parameter WIDTH0 = 1125,
+	parameter WIDTH1 = 2250
+)
+(
+  input rawclk,
+  input red,
+  output [7:0] data,
+  output intr
+);
+
+	reg clk;
+	reg rednow,redlast;
+	reg [31:0] counter;
+	reg [31:0] ticks;
+	reg [31:0] tickslast;
+	reg [31:0] state;
+	
+	wire chg;
+	
+	localparam IDEL = 32'b0;
+	localparam BOOTSTART = 32'b1;
+	localparam D0START = 32'b10;
+	localparam BOOTEND = 32'b10;
+	
+	initial
+	begin
+		ticks = 0;
+		clk = 0;
+		counter = 0;
+		state  = IDEL;
+	end
+	
+	
+	always@(posedge rawclk)
+	begin
+		if(counter == CLKMHZ - 1)
+			counter <= 0;
+		else
+			counter <= counter + 1;
+			
+		clk <= (counter == CLKMHZ - 1);
+	end
+	
+	always@(posedge clk)
+	begin
+		rednow <= red;
+		redlast <= rednow;
+	end
+	
+	assign chg = NEG[0] ? (redlast && !rednow) : (!redlast && rednow);
+	
+	always@(posedge clk)
+	if(chg)
+		ticks <= 0;
+	else
+		ticks <= ticks + 1;
+	
+	always@(posedge clk)
+	if(chg)
+	begin
+		case(state)
+		IDEL:
+			state <= BOOTSTART;
+		BOOTSTART:
+			if(ticks[31:2] == BOOT[31:2])
+				state <= D0START;
+			else
+				state <= IDEL;
+		endcase
+	end
+	
+	
+	
+
+endmodule
