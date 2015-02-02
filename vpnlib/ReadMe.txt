@@ -168,10 +168,16 @@ module red
 	end
 	
 	
-	always@(posedge clk)
+	/*always@(posedge clk)
 	if(intr)
 	begin
 		data <= code;
+	end*/
+	
+	always@(posedge clk)
+	if(chg && state_next == DATAOK)
+	begin
+		data <= (chg && state_next == DATAOK) ? {code[30:0],b} : data;
 	end
 	
 	assign intr = (state == DATAOK);
