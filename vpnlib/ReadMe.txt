@@ -137,7 +137,7 @@ module red
 		code[31:0] <= {code[30:0],b};
 		state <= state_next;
 		
-		if(state == IDEL)
+		/*if(state == IDEL)
 		begin
 			code[0] <= 1'bx;
 			state <= BOOTSTART;
@@ -164,7 +164,7 @@ module red
 		begin
 			code[0] <= 1'bx;
 			state <= IDEL;
-		end		
+		end*/		
 	end
 	
 	
