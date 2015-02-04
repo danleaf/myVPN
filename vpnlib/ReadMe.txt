@@ -12,18 +12,16 @@ module red
   input clk,
   input red,
   output [31:0] data,
-  output intr,
+  output reg red_now,red_last,
+  output reg intr,
   output reg [15:0] ticks,
   output reg [5:0] state
 );
 
-	reg red_now,red_last;
-	//reg [15:0] ticks;
-	//reg [5:0] state;
-	reg [30:0] code;
-	reg code0,code1;
+	//reg red_now,red_last;
+	reg [31:0] code;
 	
-	wire chg,rbit;
+	wire chg,rbit,intr_next,newbit;
 	wire [5:0] state_next;
 	wire [15:0] ticks_next;
 	
@@ -31,6 +29,7 @@ module red
 	begin
 		ticks = 0;
 		state = 0;
+		intr = 0;
 	end
 	
 	//divclk1us #(CLKMHZ) clk1us(rawclk, clk);
@@ -42,7 +41,8 @@ module red
 		.state_next(state_next),
 		.ticks_next(ticks_next),
 		.rbit(rbit),
-		.intr(intr));
+		.intr(intr_next),
+		.newbit(newbit));
 
 	assign chg = (red_last && !red_now);
 	
@@ -50,12 +50,13 @@ module red
 	begin
 		red_now <= red;
 		red_last <= red_now;
-		code <= (state_next == state) ? code : {code[29:0],rbit};
+		code <= newbit ? {code[30:0],rbit} : code;
 		state <= state_next;
 		ticks <= ticks_next;
+		intr <= intr_next;
 	end
 	
-	assign data = {code,rbit};
+	assign data = code;
 endmodule
 
 module caclstate
@@ -72,7 +73,7 @@ module caclstate
 	input [STATE_WIDTH-1:0] state_now,
 	output reg [STATE_WIDTH-1:0] state_next,
 	output [TICKS_WIDTH-1:0] ticks_next,
-	output rbit,intr
+	output rbit,intr,newbit
 );
 	localparam IDEL = 6'd0;
 	localparam BOOTSTART = 6'd1;
@@ -90,9 +91,12 @@ module caclstate
 	assign bootok = (ticks[TICKS_WIDTH-1:3] == BOOT[TICKS_WIDTH-1:3]);
 	assign ticks_next = (state_next == IDEL) ? 1'b0 : (chg ? 1'b0 : ticks + 1'b1);
 	assign intr = (state_next == DATAOK);
+	assign newbit = (state_next != state_now && state_next > BIT0START  && state_next <= DATAOK);
 	
 	always@(state_now or ticks)
-	if(state_now == BOOTSTART && ticks[TICKS_WIDTH-1:3] > BOOT[TICKS_WIDTH-1:3])
+	if(state_now == DATAOK)
+		illegal = 1;
+	else if(state_now == BOOTSTART && ticks[TICKS_WIDTH-1:3] > BOOT[TICKS_WIDTH-1:3])
 		illegal = 1;
 	else if(state_now >= BIT0START && state_now <= BIT31START && ticks[TICKS_WIDTH-1:3] > WIDTH1[TICKS_WIDTH-1:3])
 		illegal = 1;
