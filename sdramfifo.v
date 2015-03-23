@@ -8,7 +8,7 @@ module sdramfifo
 	parameter INCACHE_POW_SIZE = 3
 )
 (
-	input i_clk,i_rst_n,i_wr,
+	input i_clk,i_rst_n,i_wr,i_rd,
 	input [DATA_WIDTH-1:0] i_data,
 	output o_full,
 	
@@ -41,9 +41,18 @@ module sdramfifo
 	assign o_full = full;
 	assign inwaddr_next = (i_wr && !full) ? inwaddr + 1'b1 : inwaddr;
 	assign inwaddr_next_next = (i_wr && !full) ? inwaddr + 2'd2 : inwaddr + 1'b1;
-	assign inraddr_next = inraddr + 1'b1;
+	assign inraddr_next = inraddr;
 	
-	always@(posedge i_clk)
+	always@(posedge i_clk or negedge i_rst_n)
+	if(!i_rst_n)
+	begin
+		hasdata <= 0;
+		hasmoredata <= 0;
+		full <= 0;
+		inwaddr  <=  0;
+		inraddr <= 0;
+	end
+	else
 	begin
 		hasdata <= inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE];
 		hasmoredata <= inwaddr_next_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE];
@@ -56,18 +65,15 @@ module sdramfifo
 			incache[inwaddr[INCACHE_ASIZE-1:0]] <= i_data;
 	end
 	
+	localparam tPower = 15'd2;	//Power on to ready cost clocks
+	localparam tRCD = 2'd2;		//Active cost clocks
+	localparam tRC = 3'd7;		//Refresh cost clocks
+	localparam tRP = 2'd2;		//Pre charge cost clocks
+	localparam tFT = 4'd8;		//Initialize fresh times
+	localparam tPreAct = BURST_SIZE - tRCD - 2;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
+		
 	
-	//state machine
-	
-	localparam ST_WAIT = 8'b0000_0001;
-	localparam ST_ACT_WRT = 8'b0000_0010;
-	localparam ST_ACT_NEXT_WRT = 8'b0000_0100;
-	localparam ST_WRT = 8'b0000_1000;
-	localparam ST_ACT_RD = 8'b0001_0000;
-	localparam ST_ACT_NEXT_RD = 8'b0010_0000;
-	localparam ST_RD = 8'b0100_0000;
-	localparam ST_INVALID = 8'b1000_0000;
-	
+	//initialize: power on (200us)-> pre charge -> 8 times refresh -> set register -> initial OK
 	
 	localparam ST_INIT_START = 8'b0000_0001;
 	localparam ST_INIT_PRECHARGE = 8'b0000_0010;
@@ -75,14 +81,6 @@ module sdramfifo
 	localparam ST_INIT_SETREG = 8'b0000_1000;
 	localparam ST_INIT_OK = 8'b0001_0000;
 	
-	localparam tPower = 15'd20000;	//Power on to ready cost clocks
-	localparam tRCD = 2'd2;		//Active cost clocks
-	localparam tRC = 3'd7;		//Refresh cost clocks
-	localparam tRP = 2'd2;		//Pre charge cost clocks
-	localparam tFT = 4'd8;		//Initialize fresh times
-	localparam tPreAct = BURST_SIZE - tRCD - 2;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
-	
-	//initial: power on (200us)-> pre charge -> 8 times refresh -> set register -> initial OK
 	reg [7:0] initstate,initstate_next;
 	reg [1:0] init_prechg_cnt;
 	reg [2:0] init_fresh_cnt;
@@ -93,7 +91,16 @@ module sdramfifo
 	reg [12:0] init_addr;
 	reg init_ras,init_cas,init_we;
 		
-	always@(posedge i_clk)
+	always@(posedge i_clk or negedge i_rst_n)
+	if(!i_rst_n)
+	begin
+		initstate<=0;
+		power_on_cnt <= 0;
+		init_prechg_cnt <= 0;
+		init_fresh_cnt <= 0;
+		init_fresh_times <= 0;
+	end
+	else
 	begin
 		initstate <= initstate_next;
 		if(initstate != ST_INIT_START)
@@ -140,7 +147,7 @@ module sdramfifo
 	begin
 		{init_ras,init_cas,init_we} = 3'b010;
 		init_addr[10] = 1'b1;
-		{init_ba,init_addr[12:11],init_addr[9:0]} <= {14{1'bx}};
+		{init_ba,init_addr[12:11],init_addr[9:0]} = {14{1'bx}};
 	end
 	ST_INIT_REFRESH:
 	begin
@@ -148,7 +155,7 @@ module sdramfifo
 			{init_ras,init_cas,init_we} = 3'b001;
 		else
 			{init_ras,init_cas,init_we} = 3'b111;
-		{init_ba,init_addr} <= {15{1'bx}};
+		{init_ba,init_addr} = {15{1'bx}};
 	end
 	ST_INIT_SETREG:
 	begin
@@ -164,20 +171,37 @@ module sdramfifo
 	end	
 	endcase
 		
-
+	//write and read
+	
+	localparam ST_WAIT = 8'b0000_0001;
+	localparam ST_ACT = 8'b0000_0010;
+	localparam ST_PRE_ACT = 8'b0000_0100;
+	localparam ST_ACCESS = 8'b0000_1000;
+	localparam ST_INVALID = 8'b1000_0000;
+	localparam RD = 1'b0;
+	localparam WR = 1'b1;
+	
+	reg wrrd;
 	reg [7:0] state,state_next;
 	reg [1:0] act_cnt;
-	reg [2:0] wrt_cnt;
-	reg [3:0] rd_cnt;
+	reg [2:0] acc_cnt;
 	
 	always@(posedge i_clk)
 	begin
 		state <= state_next;
-		if(state != ST_WRT && state != ST_ACT_NEXT_WRT)
-			wrt_cnt <= 0;
+		
+		if(state == ST_WAIT && state_next == ST_ACT)
+			if(hasdata)
+				wrrd <= 1'b1;
+			else
+				wrrd <= 1'b0;
+			
+		if(state != ST_ACCESS && state != ST_PRE_ACT)
+			acc_cnt <= 0;
 		else
-			wrt_cnt <= wrt_cnt + 1'b1;
-		if(state != ST_ACT_WRT && state != ST_ACT_RD)
+			acc_cnt <= (acc_cnt==3'd7 ? 0 : acc_cnt + 1'b1);
+			
+		if(state != ST_ACT)
 			act_cnt <= 0;
 		else
 			act_cnt <= act_cnt + 1'b1;
@@ -187,42 +211,103 @@ module sdramfifo
 	if(initstate == ST_INIT_OK)
 		case(state)
 		ST_WAIT:
-			if(hasdata) 
-				state_next = ST_ACT_WRT;
+			if(hasdata || i_rd) 
+				state_next = ST_ACT;
 			else
 				state_next = ST_WAIT;
-		ST_ACT_WRT: 
-			state_next = (act_cnt == tRCD) ? ST_WRT : ST_ACT_WRT;
-		ST_WRT:
-			if(wrt_cnt == tPreAct)
+		ST_ACT: 
+			state_next = (act_cnt == tRCD) ? ST_ACCESS : ST_ACT;
+		ST_ACCESS:
+			if(acc_cnt == tPreAct)
 				if(hasmoredata)
-					state_next = ST_ACT_NEXT_WRT;
+					state_next = ST_PRE_ACT;
 				else
-					state_next = ST_WRT;
-			else if(wrt_cnt == BURST_SIZE - 1'b1)
+					state_next = ST_ACCESS;
+			else if(acc_cnt == BURST_SIZE - 1'b1)
 				state_next = ST_WAIT;
 			else 
-				state_next = ST_WRT;
-		ST_ACT_NEXT_WRT:
-			if(wrt_cnt == BURST_SIZE - 1'b1)
-				state_next = ST_WRT;
+				state_next = ST_ACCESS;
+		ST_PRE_ACT:
+			if(acc_cnt == BURST_SIZE - 1'b1)
+				state_next = ST_ACCESS;
 			else 
-				state_next = ST_ACT_NEXT_WRT;
+				state_next = ST_PRE_ACT;
 		default:
 			state_next = ST_WAIT;
 		endcase
 	else
 		state_next = ST_INVALID;
-		
-		
+	
+	localparam RAM_ADDR_SIZE = ROW_WIDTH+COL_WIDTH-BURST_POW_SIZE+BANK_WIDTH;
+	reg [RAM_ADDR_SIZE-1:0] waddr,raddr;
 	
 	always@(posedge i_clk)
 	if(initstate != ST_INIT_OK)
 		{o_sdram_ras,o_sdram_cas,o_sdram_we,o_sdram_ba,o_sdram_addr} <= {init_ras,init_cas,init_we,init_ba,init_addr};
 	else
 		case(state)
+		ST_WAIT:
+		begin
+			{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+			{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
+		end
+		ST_ACT:
+		begin
+			if(act_cnt == 0)
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b011;
+				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0] : raddr[BANK_WIDTH-1:0];
+				o_sdram_addr <= wrrd ? waddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH] : raddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH];
+			end
+			else
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
+			end
+		end
+		ST_PRE_ACT:
+		begin
+			if(acc_cnt == tPreAct + 1'b1)
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b011;
+				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0]+1'b1 : raddr[BANK_WIDTH-1:0]+1'b1;
+				o_sdram_addr <= (wrrd ? waddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH] : raddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH]) + 
+					(waddr[BANK_WIDTH-1:0]==2'b11 ? 1'b1 : 1'b0);
+			end
+			else
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
+			end
+		end
+		ST_ACCESS:
+		begin
+			if(acc_cnt == 0)
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= wrrd ? 3'b100 : 3'b101;
+				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0]+1'b1 : raddr[BANK_WIDTH-1:0]+1'b1;
+				o_sdram_addr <= {waddr[RAM_ADDR_SIZE-ROW_WIDTH-1:BURST_POW_SIZE+BANK_WIDTH],{BURST_POW_SIZE{1'b0}}};
+			end
+			else
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
+			end
+		end
+		
 		default:
-			{o_sdram_ras,o_sdram_cas,o_sdram_we,o_sdram_ba,o_sdram_addr} <= {18{1'bx}};
+		begin
+			{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+			{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
+		end
 		endcase
+		
+		
+	always@(posedge i_clk or negedge i_rst_n)
+	if(!i_rst_n)
+	begin
+		waddr<=0;
+		raddr <= 0;
+	end
 		
 endmodule
