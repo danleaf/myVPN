@@ -36,12 +36,11 @@ module sdramfifo
 	reg [INCACHE_ASIZE:0] inwaddr,inraddr;
 	reg full,hasdata,hasmoredata;
 	
-	wire [INCACHE_ASIZE:0] inwaddr_next,inwaddr_next_next,inraddr_next;
+	wire [INCACHE_ASIZE:0] inwaddr_next,inraddr_next;
 	
 	assign o_full = full;
 	assign inwaddr_next = (i_wr && !full) ? inwaddr + 1'b1 : inwaddr;
-	assign inwaddr_next_next = (i_wr && !full) ? inwaddr + 2'd2 : inwaddr + 1'b1;
-	assign inraddr_next = inraddr;
+	assign inraddr_next = (state==ST_ACCESS && wrrd) ? inraddr + 1'd1 : inraddr;
 	
 	always@(posedge i_clk or negedge i_rst_n)
 	if(!i_rst_n)
@@ -50,16 +49,15 @@ module sdramfifo
 		hasmoredata <= 0;
 		full <= 0;
 		inwaddr  <=  0;
-		inraddr <= 0;
 	end
 	else
 	begin
 		hasdata <= inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE];
-		hasmoredata <= inwaddr_next_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE];
+		hasmoredata <= (inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE]) 
+			&& (inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] +  1'b1);
 		full <= {!inraddr_next[INCACHE_ASIZE],inraddr_next[INCACHE_ASIZE-1:INCACHE_POW_SIZE]} == 
 			{inwaddr_next[INCACHE_ASIZE],inwaddr_next[INCACHE_ASIZE-1:INCACHE_POW_SIZE]};
 		inwaddr <= inwaddr_next;
-		inraddr <= inraddr_next;
 					
 		if(i_wr && !full)
 			incache[inwaddr[INCACHE_ASIZE-1:0]] <= i_data;
@@ -70,7 +68,7 @@ module sdramfifo
 	localparam tRC = 3'd7;		//Refresh cost clocks
 	localparam tRP = 2'd2;		//Pre charge cost clocks
 	localparam tFT = 4'd8;		//Initialize fresh times
-	localparam tPreAct = BURST_SIZE - tRCD - 2;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
+	localparam tPreAct = BURST_SIZE - tRCD - 1'b1;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
 		
 	
 	//initialize: power on (200us)-> pre charge -> 8 times refresh -> set register -> initial OK
@@ -199,7 +197,7 @@ module sdramfifo
 		if(state != ST_ACCESS && state != ST_PRE_ACT)
 			acc_cnt <= 0;
 		else
-			acc_cnt <= (acc_cnt==3'd7 ? 0 : acc_cnt + 1'b1);
+			acc_cnt <= (acc_cnt==3'd7 ? 3'd0 : acc_cnt + 1'b1);
 			
 		if(state != ST_ACT)
 			act_cnt <= 0;
@@ -218,20 +216,13 @@ module sdramfifo
 		ST_ACT: 
 			state_next = (act_cnt == tRCD) ? ST_ACCESS : ST_ACT;
 		ST_ACCESS:
-			if(acc_cnt == tPreAct)
-				if(hasmoredata)
-					state_next = ST_PRE_ACT;
-				else
-					state_next = ST_ACCESS;
-			else if(acc_cnt == BURST_SIZE - 1'b1)
-				state_next = ST_WAIT;
-			else 
-				state_next = ST_ACCESS;
-		ST_PRE_ACT:
 			if(acc_cnt == BURST_SIZE - 1'b1)
+				if(!hasmoredata)
+					state_next = ST_WAIT;
+				else 
+					state_next = ST_ACCESS;
+			else
 				state_next = ST_ACCESS;
-			else 
-				state_next = ST_PRE_ACT;
 		default:
 			state_next = ST_WAIT;
 		endcase
@@ -240,6 +231,9 @@ module sdramfifo
 	
 	localparam RAM_ADDR_SIZE = ROW_WIDTH+COL_WIDTH-BURST_POW_SIZE+BANK_WIDTH;
 	reg [RAM_ADDR_SIZE-1:0] waddr,raddr;
+	reg [DATA_WIDTH-1:0] wr_data;
+	
+	assign io_sdram_data = wrrd ? wr_data : {DATA_WIDTH{1'bz}};
 	
 	always@(posedge i_clk)
 	if(initstate != ST_INIT_OK)
@@ -265,28 +259,20 @@ module sdramfifo
 				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
 			end
 		end
-		ST_PRE_ACT:
-		begin
-			if(acc_cnt == tPreAct + 1'b1)
-			begin
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b011;
-				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0]+1'b1 : raddr[BANK_WIDTH-1:0]+1'b1;
-				o_sdram_addr <= (wrrd ? waddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH] : raddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH]) + 
-					(waddr[BANK_WIDTH-1:0]==2'b11 ? 1'b1 : 1'b0);
-			end
-			else
-			begin
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
-				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
-			end
-		end
 		ST_ACCESS:
 		begin
 			if(acc_cnt == 0)
 			begin
 				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= wrrd ? 3'b100 : 3'b101;
+				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0] : raddr[BANK_WIDTH-1:0];
+				o_sdram_addr <= {1'b1,waddr[RAM_ADDR_SIZE-ROW_WIDTH-1:BANK_WIDTH],{BURST_POW_SIZE{1'b0}}};
+			end
+			else if(acc_cnt == tPreAct && hasmoredata)
+			begin
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b011;
 				o_sdram_ba <= wrrd ? waddr[BANK_WIDTH-1:0]+1'b1 : raddr[BANK_WIDTH-1:0]+1'b1;
-				o_sdram_addr <= {waddr[RAM_ADDR_SIZE-ROW_WIDTH-1:BURST_POW_SIZE+BANK_WIDTH],{BURST_POW_SIZE{1'b0}}};
+				o_sdram_addr <= (wrrd ? waddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH] : raddr[RAM_ADDR_SIZE-1:RAM_ADDR_SIZE-ROW_WIDTH]) + 
+					(waddr[BANK_WIDTH-1:0]==2'b11 ? 1'b1 : 1'b0);
 			end
 			else
 			begin
@@ -306,8 +292,26 @@ module sdramfifo
 	always@(posedge i_clk or negedge i_rst_n)
 	if(!i_rst_n)
 	begin
-		waddr<=0;
+		inraddr <= 0;
+		waddr <=0;
 		raddr <= 0;
 	end
+	else
+		case(state)
+		ST_ACCESS:
+		begin			
+			if(wrrd)
+			begin
+				wr_data <= incache[inraddr];
+				inraddr <= inraddr + 1'b1;
+			end
+			
+			if(acc_cnt == {BURST_POW_SIZE{1'b1}})
+				if(wrrd) 
+					waddr <= waddr + 1'b1;
+				else
+					raddr <= raddr + 1'b1;
+		end
+		endcase
 		
 endmodule
