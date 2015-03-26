@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vpnagent", "vpnagent\vpnage
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vpnserver", "vpnserver\vpnserver.csproj", "{C504603E-EE92-41E2-87D5-B4D3E93FA481}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "voice", "voice\voice.vcxproj", "{07FE7199-2894-4F18-876B-655D8F1EE735}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,16 @@ Global
 		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{C504603E-EE92-41E2-87D5-B4D3E93FA481}.Release|Win32.ActiveCfg = Release|Any CPU
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Debug|Win32.ActiveCfg = Debug|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Debug|Win32.Build.0 = Debug|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Release|Any CPU.ActiveCfg = Release|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Release|Win32.ActiveCfg = Release|Win32
+		{07FE7199-2894-4F18-876B-655D8F1EE735}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
