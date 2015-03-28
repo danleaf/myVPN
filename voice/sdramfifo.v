@@ -5,12 +5,17 @@ module sdramfifo
 	parameter COL_WIDTH = 9,
 	parameter DATA_WIDTH = 16,
 	parameter BURST_POW_SIZE = 3,
-	parameter INCACHE_POW_SIZE = 3
+	parameter INCACHE_POW_SIZE = 3,
+	parameter WAVE_SIZE = 16
 )
 (
 	input i_clk,i_rst_n,i_wr,i_rd,
-	input [DATA_WIDTH-1:0] i_data,
+	input [DATA_WIDTH-1:0] i_wr_data,
+	output reg [DATA_WIDTH-1:0] o_rd_data,
 	output o_full,
+	output o_rd_fail,		//read fail
+	output o_rd_ef,		//o_rd_data effective
+	output o_rd_done,	//read one wave request done
 	
 	//connect with SDRAM chip
 	inout [DATA_WIDTH-1:0] io_sdram_data,
@@ -60,18 +65,20 @@ module sdramfifo
 		inwaddr <= inwaddr_next;
 					
 		if(i_wr && !full)
-			incache[inwaddr[INCACHE_ASIZE-1:0]] <= i_data;
+			incache[inwaddr[INCACHE_ASIZE-1:0]] <= i_wr_data;
 	end
 	
 	localparam tPower = 15'd2;	//Power on to ready cost clocks
-	localparam tOne = 5'd17;	//one full access cost clocks	
-	localparam tRef = 10'd780;	//refresh cycle clocks of 100MHZ, 133MHZ is 1115
 	localparam tRCD = 2'd2;		//Active cost clocks
 	localparam tRC = 3'd7;		//Refresh cost clocks
 	localparam tRP = 2'd2;		//Pre charge cost clocks
 	localparam tFT = 4'd8;		//Initialize fresh times
 	localparam tCL = 2'd2;
 	localparam tPreAct = BURST_SIZE - tRCD;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
+	localparam tOne = 5'd18;	//one full access cost clocks	
+	localparam tRef = 10'd781;	//refresh cycle clocks, 100MHZ is 781, 133MHZ is 1038  ---7812us,refr_cycl_cnt < tRef-tOne
+	localparam RefMin = 11'd1024-(tRef-tOne)+1'b1;
+	localparam RefMax = 11'd1024 + tOne;
 	
 	
 	//initialize: power on (200us)-> pre charge -> 8 times refresh -> set register -> initial OK
@@ -183,21 +190,27 @@ module sdramfifo
 	localparam RD = 1'b0;
 	localparam WR = 1'b1;
 	
-	reg wrrd;
+	reg wrrd,rd_done,rd_done0,rd_done1,rd_data_on,rd_data_on0,rd_data_on1;
 	reg [7:0] state,state_next;
 	reg [1:0] act_cnt;
 	reg [2:0] acc_cnt;
 	reg [2:0] refr_cnt;
 	//reg [9:0] refr_cycl_cnt;
 	
-	wire [1:0] nouse;
-	wire [9:0] refr_cycl_cnt;
+	wire [11:0] refr_cycl_cnt,read_cnt;
 	
-	counter12Mod #(tRC,tRef) refcyc_cntr(i_clk,(initstate == ST_INIT_SETREG),{nouse,refr_cycl_cnt});
+	counter12Mod #(tRC+RefMin+1,RefMin,RefMax) refcyc_cntr(i_clk,(initstate == ST_INIT_SETREG),refr_cycl_cnt);
+	
+	counter12 read_cntr(i_clk,rd_done,
+		acc_cnt == 0 && state == ST_ACCESS && !wrrd,
+		read_cnt);
+	
+	reg actnext,readmore,empty;
 	
 	always@(posedge i_clk)
 	begin
 		state <= state_next;
+		empty <= (r_addr == w_addr);
 		
 		if(state == ST_IDEL)
 			if(hasdata)
@@ -205,20 +218,37 @@ module sdramfifo
 			else
 				wrrd <= 1'b0;
 			
-		if(state != ST_ACCESS)
-			acc_cnt <= 0;
-		else
-			acc_cnt <= (acc_cnt == 3'd7) ? 3'd0 : acc_cnt + 1'b1;
-			
 		if(state != ST_ACT)
 			act_cnt <= 0;
-		else
+		else 
 			act_cnt <= act_cnt + 1'b1;
+			
+		if(state != ST_ACCESS)
+			{acc_cnt,actnext,rd_data_on} <= 0;
+		else
+		begin
+			readmore <= !((read_cnt == WAVE_SIZE) || (r_addr_next == w_addr));
+			if(!wrrd)
+				rd_data_on <= 1'b1;
+			if(acc_cnt == tPreAct-1'b1)
+				actnext <= (wrrd ? hasmoredata : readmore) && !refr_cycl_cnt[10];	//refr_cycl_cnt < tRef-tOne   ==>  refr_cycl_cnt < 1024
+			else if(acc_cnt == BURST_SIZE-1)
+				actnext <= 0;
+			acc_cnt <= acc_cnt + 1'b1;
+		end
 			
 		if(state != ST_REFRESH)
 			refr_cnt <= 0;
 		else
 			refr_cnt <= refr_cnt + 1'b1;
+			
+		if(state == ST_FINAL && read_cnt == WAVE_SIZE)
+			rd_done <= 1;
+		else
+			rd_done <= 0;
+			
+		{rd_done1,rd_done0} <= {rd_done0,rd_done};
+		{rd_data_on1,rd_data_on0} <= {rd_data_on0,rd_data_on};
 		
 		//if(initstate == ST_INIT_SETREG)
 			//refr_cycl_cnt <= tRC;
@@ -226,13 +256,16 @@ module sdramfifo
 			//refr_cycl_cnt <= (refr_cycl_cnt == tRef - 1'b1) ? 10'd0 : refr_cycl_cnt + 1'b1;
 	end
 	
+	assign o_rd_done = rd_done1;
+	assign o_rd_ef = rd_data_on1;
+	
 	always@(*)
 	if(initstate == ST_INIT_OK)
 		case(state)
 		ST_IDEL:
-			if(refr_cycl_cnt == 0)
+			if(refr_cycl_cnt == RefMax-1)
 				state_next = ST_REFRESH;
-			else if((hasdata || i_rd) && refr_cycl_cnt < tRef-tOne) 
+			else if((hasdata || (i_rd & !empty)) && !refr_cycl_cnt[10]) //refr_cycl_cnt < tRef-tOne   ==>  refr_cycl_cnt < 1024
 				state_next = ST_ACT;
 			else
 				state_next = ST_IDEL;
@@ -244,8 +277,8 @@ module sdramfifo
 		ST_ACT: 
 			state_next = (act_cnt == tRCD) ? ST_ACCESS : ST_ACT;
 		ST_ACCESS:
-			if(acc_cnt == BURST_SIZE - 1'b1)
-				if(hasmoredata && refr_cycl_cnt < tRef-tOne+(BURST_SIZE-1'b1-tPreAct))
+			if(acc_cnt == BURST_SIZE-1)
+				if(actnext)
 					state_next = ST_ACCESS;
 				else
 					state_next = ST_FINAL;
@@ -329,7 +362,7 @@ module sdramfifo
 					wrrd ? w_col_addr : r_col_addr,
 					{BURST_POW_SIZE{1'b0}}};
 			end
-			else if(acc_cnt == tPreAct && hasmoredata && refr_cycl_cnt < tRef-tOne)
+			else if(acc_cnt == tPreAct && actnext)
 			begin
 				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b011;
 				o_sdram_ba <= wrrd ? w_bank_next : r_bank_next;
@@ -371,6 +404,8 @@ module sdramfifo
 				wr_data <= incache[inraddr];
 				inraddr <= inraddr + 1'b1;
 			end
+			else if(rd_data_on1)
+				o_rd_data <= io_sdram_data;
 		end
 		endcase
 		
