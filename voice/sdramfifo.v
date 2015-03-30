@@ -5,7 +5,6 @@ module sdramfifo
 	parameter COL_WIDTH = 9,
 	parameter DATA_WIDTH = 16,
 	parameter BURST_POW_SIZE = 3,
-	parameter INCACHE_POW_SIZE = 3,
 	parameter WAVE_SIZE = 16
 )
 (
@@ -39,7 +38,13 @@ module sdramfifo
 	
 	reg [DATA_WIDTH-1:0] incache[INCACHE_SIZE-1:0];
 	reg [INCACHE_ASIZE:0] inwaddr,inraddr;
-	reg full,hasdata,hasmoredata;
+	reg full;
+	reg [INCACHE_ASIZE-BURST_POW_SIZE:0]cach_cnt;
+	
+	wire hasdata,hasmoredata;	
+	
+	assign hasdata = |cach_cnt;
+	assign hasmoredata = |cach_cnt[INCACHE_ASIZE-BURST_POW_SIZE:1];
 	
 	wire [INCACHE_ASIZE:0] inwaddr_next,inraddr_next;
 	
@@ -50,22 +55,55 @@ module sdramfifo
 	always@(posedge i_clk or negedge i_rst_n)
 	if(!i_rst_n)
 	begin
-		hasdata <= 0;
-		hasmoredata <= 0;
+		//hasdata <= 0;
+		//hasmoredata <= 0;
 		full <= 0;
 		inwaddr  <=  0;
+		cach_cnt <= 0;
 	end
 	else
 	begin
-		hasdata <= inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE];
-		hasmoredata <= (inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE]) 
-			&& (inwaddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] != inraddr_next[INCACHE_ASIZE:INCACHE_POW_SIZE] +  1'b1);
-		full <= {!inraddr_next[INCACHE_ASIZE],inraddr_next[INCACHE_ASIZE-1:INCACHE_POW_SIZE]} == 
-			{inwaddr_next[INCACHE_ASIZE],inwaddr_next[INCACHE_ASIZE-1:INCACHE_POW_SIZE]};
-		inwaddr <= inwaddr_next;
-					
+		/*hasdata <= inwaddr_next[INCACHE_ASIZE:BURST_POW_SIZE] != inraddr_next[INCACHE_ASIZE:BURST_POW_SIZE];
+		hasmoredata <= (inwaddr_next[INCACHE_ASIZE:BURST_POW_SIZE] != inraddr_next[INCACHE_ASIZE:BURST_POW_SIZE]) 
+			&& (inwaddr_next[INCACHE_ASIZE:BURST_POW_SIZE] != inraddr_next[INCACHE_ASIZE:BURST_POW_SIZE] +  1'b1);
+		full <= {!inraddr_next[INCACHE_ASIZE],inraddr_next[INCACHE_ASIZE-1:BURST_POW_SIZE]} == 
+			{inwaddr_next[INCACHE_ASIZE],inwaddr_next[INCACHE_ASIZE-1:BURST_POW_SIZE]};
+		inwaddr <= inwaddr_next;*/
+		if((i_wr && !full) && !(state==ST_ACCESS && wrrd))
+		begin
+			if(&inwaddr[BURST_POW_SIZE-1:0])
+				cach_cnt <= cach_cnt + 1'b1;
+			if(&inwaddr[BURST_POW_SIZE-1:0] && cach_cnt == BURST_SIZE-1'b1) 
+				full <= 1'b1;
+		end
+		else if(!(i_wr && !full) && (state==ST_ACCESS && wrrd))
+		begin
+			if(&inraddr[BURST_POW_SIZE-1:0])
+			begin
+				full <= 0;
+				cach_cnt <= cach_cnt - 1'b1;		
+			end
+		end
+		else if((i_wr && !full) && (state==ST_ACCESS && wrrd))
+		begin
+			if(&inwaddr[BURST_POW_SIZE-1:0] && !(&inraddr[BURST_POW_SIZE-1:0]))
+			begin
+				cach_cnt <= cach_cnt + 1'b1;
+				if(cach_cnt == BURST_SIZE-1'b1)		
+					full <= 1'b1;
+			end
+			if(!(&inwaddr[BURST_POW_SIZE-1:0]) && &inraddr[BURST_POW_SIZE-1:0])
+			begin
+				full <= 0;
+				cach_cnt <= cach_cnt - 1'b1;		
+			end
+		end
+		
 		if(i_wr && !full)
+		begin
+			inwaddr <= inwaddr + 1'b1;
 			incache[inwaddr[INCACHE_ASIZE-1:0]] <= i_wr_data;
+		end
 	end
 	
 	localparam tPower = 15'd2;	//Power on to ready cost clocks
