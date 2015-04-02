@@ -18,10 +18,12 @@ module sdramfifo
 	output reg o_sdram_cas,
 	output reg o_sdram_we,
 	output o_sdram_cke,
-	output o_sdram_cs,
-	output o_sdram_clk
+	output o_sdram_cs
+	,output [7:0] state1,state2,
+	output [RAM_ADDR_SIZE-1:0] waddr,raddr
 );	//initialize: power on (200us)-> pre charge -> 8 times refresh -> set register -> initial OK
-	
+	assign waddr = w_addr;
+	assign raddr = r_addr;
 	localparam BURST_WIDTH = 3;
 	localparam BURST_SIZE = 4'd8;
 	localparam INCACHE_SIZE = 64;
@@ -63,6 +65,9 @@ module sdramfifo
 	
 	assign o_sdram_cs = 1'b0;
 	assign o_sdram_cke = 1'b1;
+	
+	assign state1 = initstate;
+	assign state2 = state;
 	
 	//cache FIFO, for buff the written data, every 8 data is a unit, SDRAM write a unit in one burst write 
 	
@@ -404,10 +409,10 @@ module sdramfifo
 		ST_REFRESH:
 		begin
 			if(refr_cnt == 0) 
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} = 3'b001;
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b001;
 			else
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} = 3'b111;
-			{o_sdram_ba,o_sdram_addr} = {15{1'bx}};
+				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
+			{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
 		end
 		default:
 		begin
