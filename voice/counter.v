@@ -11,7 +11,7 @@ module counter
 	reg c0,c1,c2;
 	initial
 	begin
-		{cnt3,cnt2,cnt1,cnt0} = 16'b0;
+		{cnt3,cnt2,cnt1,cnt0} = INIT_VALUE;
 		{c0,c1,c2} = 3'b0;
 	end
 	
@@ -55,7 +55,7 @@ module counter24
 	reg c0,c1,c2,c3,c4;
 	initial
 	begin
-		{cnt5,cnt4,cnt3,cnt2,cnt1,cnt0} = 24'b0;
+		{cnt5,cnt4,cnt3,cnt2,cnt1,cnt0} = INIT_VALUE;
 		{c0,c1,c2,c3,c4} = 5'b0;
 	end
 	
@@ -94,8 +94,8 @@ endmodule
 
 module counter12Mod
 #(
-	parameter INIT_VALUE = 12'd0,
-	parameter MIN_VALUE = 12'd1,
+	parameter SET_VALUE = 12'd0,
+	parameter MIN_VALUE = 12'd0,
 	parameter MAX_VALUE = 12'd100
 )
 (input clk, input init, output [11:0] q);
@@ -106,7 +106,7 @@ module counter12Mod
 	reg c0,c1;
 	initial
 	begin
-		{cnt2,cnt1,cnt0} = 12'b0;
+		{cnt2,cnt1,cnt0} = MIN_VALUE;
 		{c0,c1} = 2'b0;
 	end
 	
@@ -114,10 +114,10 @@ module counter12Mod
 	
 	always@(posedge clk)
 	if(init)
-		{cnt2,cnt1,cnt0,c1,c0} <= {INIT_VALUE,2'b0};
+		{cnt2,cnt1,cnt0,c1,c0} <= {SET_VALUE,2'b0};
 	else
 	begin
-		if({cnt2,cnt1,cnt0}==MAX_VALUE)
+		if({cnt2,cnt1,cnt0} == MAX_VALUE)
 			{cnt2,cnt1,cnt0,c1,c0} <= {MIN_VALUE,2'b0};
 		else
 		begin
@@ -138,7 +138,7 @@ endmodule
 
 module counter12
 #(
-	parameter INIT_VALUE = 12'd0
+	parameter SET_VALUE = 12'd0
 )
 (input clk, input init, input i_en, output [11:0] q);
 
@@ -156,7 +156,7 @@ module counter12
 	
 	always@(posedge clk)
 	if(init)
-		{cnt2,cnt1,cnt0,c1,c0} <= {INIT_VALUE,2'b0};
+		{cnt2,cnt1,cnt0,c1,c0} <= {SET_VALUE,2'b0};
 	else if(i_en)
 	begin
 		c0 <= (&cnt0[3:1])&(~cnt0[0]);
