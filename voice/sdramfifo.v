@@ -43,7 +43,7 @@ module sdramfifo
 	localparam tCL = 2'd2;		//CL
 	localparam tPreAct = BURST_SIZE - tRCD;	//the counter ticks witch the next bank should be active while the previous bank is being written or read
 	localparam tOne = 5'd18;	//one full access cost clocks	
-	localparam tRef = 10'd78;	//refresh cycle clocks, 100MHZ is 781, 133MHZ is 1038  ---7812us,refr_cycl_cnt < tRef-tOne
+	localparam tRef = 10'd781;	//refresh cycle clocks, 100MHZ is 781, 133MHZ is 1038  ---7812us,refr_cycl_cnt < tRef-tOne
 	localparam RefMin = 11'd1024-(tRef-tOne)+1'b1;	//MIN value of refresh counter  
 	localparam RefMax = 11'd1024 + tOne;			//MAX value of refresh counter 
 	
