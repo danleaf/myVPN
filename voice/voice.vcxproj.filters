@@ -16,7 +16,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="sdramfifo.v">
-      <Filter>源文件</Filter>
+      <Filter>资源文件</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
