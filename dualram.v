@@ -46,4 +46,3 @@ module dualram8
 		endcase
 
 endmodule
-

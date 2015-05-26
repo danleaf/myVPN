@@ -161,8 +161,10 @@ bool replace(const P& p, list<P>& subg)
 	return true;
 }
 
-int main0()
+int main2()
 {
+	//x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x1+1
+
 	pmap[P(1, 31)] = Assign(P(1, 31), P(0, 30));
 	pmap[P(1, 30)] = Assign(P(1, 30), P(0, 29));
 	pmap[P(1, 29)] = Assign(P(1, 29), P(0, 28));

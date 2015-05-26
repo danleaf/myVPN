@@ -51,7 +51,7 @@ module RED_RECV
 		o_intr <= intr_next;
 	end
 	
-	assign o_data = code;
+	assign o_data = code & 32'b11_1111_0000_0000;
 endmodule
 
 module caclstate

@@ -289,7 +289,7 @@ unsigned int comput8p(unsigned int r, unsigned char d)
 	return rn.un.r;
 }
 
-int main()
+int main0()
 {
 	int a;
 
