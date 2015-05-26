@@ -71,7 +71,52 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="ADC.v" />
+    <None Include="add.v" />
+    <None Include="ad_buff.v" />
+    <None Include="AD_FIFO.v" />
+    <None Include="ad_wrapper.v" />
+    <None Include="altdualram.v" />
+    <None Include="checksum.v" />
+    <None Include="cntt.v" />
+    <None Include="cntt_bb.v" />
+    <None Include="communication.v" />
+    <None Include="counter.v" />
+    <None Include="crc.v" />
+    <None Include="DIVCLK.v" />
+    <None Include="dualram.v" />
+    <None Include="eth.v" />
+    <None Include="etharp.v" />
+    <None Include="eth_commu.v" />
+    <None Include="eth_sender.v" />
+    <None Include="fifo - 副本.v" />
+    <None Include="fifo.v" />
+    <None Include="GrayCounter4Bit.v" />
+    <None Include="inc.v" />
+    <None Include="indififo.v" />
+    <None Include="ip.v" />
+    <None Include="mac - 副本.v" />
+    <None Include="mac.v" />
+    <None Include="NUMSHOW.v" />
+    <None Include="packet.v" />
+    <None Include="pll125m.v" />
+    <None Include="pll125m_bb.v" />
+    <None Include="pll133m.v" />
+    <None Include="pll133m_bb.v" />
+    <None Include="pll180m.v" />
+    <None Include="pll180m_bb.v" />
+    <None Include="RED_RECV.v" />
+    <None Include="sdram.v" />
     <None Include="sdramfifo.v" />
+    <None Include="syncfifo.v" />
+    <None Include="test.v" />
+    <None Include="testip.v" />
+    <None Include="top.v" />
+    <None Include="top0.v" />
+    <None Include="udp.v" />
+    <None Include="voice.sdc" />
+    <None Include="voice.v" />
+    <None Include="wave_fifo.v" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

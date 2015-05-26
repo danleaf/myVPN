@@ -18,6 +18,141 @@
     <None Include="sdramfifo.v">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="voice.sdc">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ad_buff.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="AD_FIFO.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ad_wrapper.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ADC.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="add.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="altdualram.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="checksum.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="cntt.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="cntt_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="communication.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="counter.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="crc.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="DIVCLK.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="dualram.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="eth.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="eth_commu.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="eth_sender.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="etharp.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="fifo - 副本.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="fifo.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="GrayCounter4Bit.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="inc.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="indififo.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="ip.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="mac - 副本.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="mac.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="NUMSHOW.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="packet.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll125m.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll125m_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll133m.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll133m_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll180m.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll180m_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="RED_RECV.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="sdram.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="syncfifo.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="test.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="testip.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="top.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="top0.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="udp.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="voice.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="wave_fifo.v">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
