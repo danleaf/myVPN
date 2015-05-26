@@ -224,20 +224,20 @@ module sdramfifo
 	
 	always@(*)
 	case(initstate)
-	ST_INIT_PRECHARGE:
-	begin
-		{init_ras,init_cas,init_we} = 3'b010;
-		init_addr[10] = 1'b1;
-		{init_ba,init_addr[12:11],init_addr[9:0]} = {14{1'bx}};
-	end
-	ST_INIT_REFRESH:
-	begin
-		if(init_fresh_cnt == 0) 
-			{init_ras,init_cas,init_we} = 3'b001;
-		else
-			{init_ras,init_cas,init_we} = 3'b111;
-		{init_ba,init_addr} = {15{1'bx}};
-	end
+	//ST_INIT_PRECHARGE:
+	//begin
+		//{init_ras,init_cas,init_we} = 3'b010;
+		//init_addr[10] = 1'b1;
+		//{init_ba,init_addr[12:11],init_addr[9:0]} = {14{1'bx}};
+	//end
+	//ST_INIT_REFRESH:
+	//begin
+		//if(init_fresh_cnt == 0) 
+			//{init_ras,init_cas,init_we} = 3'b001;
+		//else
+			//{init_ras,init_cas,init_we} = 3'b111;
+		//{init_ba,init_addr} = {15{1'bx}};
+	//end
 	ST_INIT_SETREG:
 	begin
 		{init_ras,init_cas,init_we} = 3'b000;
@@ -401,7 +401,6 @@ module sdramfifo
 			end
 		end
 		ST_ACCESS:
-		//if(wrrd)
 		begin
 			if(acc_cnt == 0)
 			begin
@@ -421,34 +420,16 @@ module sdramfifo
 			begin
 				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
 				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
-				//o_sdram_addr <= {13{1'bx}};
-				//o_sdram_ba <= wrrd ? w_bank : r_bank;
 			end
 		end
-		/*else 
-		begin
-			if(acc_cnt == 0 || acc_cnt == 3'd0)
-			begin
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= wrrd ? 3'b100 : 3'b101;
-				o_sdram_ba <= wrrd ? w_bank : r_bank;
-				o_sdram_addr <= {acc_cnt == 3'd4 ? 1'b1 : 1'b0,
-					wrrd ? w_col_addr : r_col_addr,
-					acc_cnt};
-			end
-			else
-			begin
-				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
-				{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
-			end
-		end*/
-		ST_REFRESH:
+		/*ST_REFRESH:
 		begin
 			if(refr_cnt == 0) 
 				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b001;
 			else
 				{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;
 			{o_sdram_ba,o_sdram_addr} <= {15{1'bx}};
-		end
+		end*/
 		default:
 		begin
 			{o_sdram_ras,o_sdram_cas,o_sdram_we} <= 3'b111;

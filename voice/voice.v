@@ -16,6 +16,12 @@ module voice
 	wire [AD_DATA_WIDTH*2-1:0] ad_dual_data;
 	wire [31:0] red_data;
 	wire red_intr,ad_open,ad_rd_empty;
+		
+	DIVCLK #(2) divclk3 (i_clk_sys50m, o_clk_ad25m);
+	DIVCLK #(5) divclk4 (i_clk_sys50m, o_clk_da);
+	DIVCLK #(50) divclk0 (i_clk_sys50m, clk_red_1us);
+	DIVCLK #(50000) divclk1 (i_clk_sys50m, clk_num_1ms);
+	DIVCLK #(25000000) divclk2 (i_clk_sys50m, clk_500ms);
 	
 	pll pll_ad(	
 		.inclk0(i_clk_sys50m),
@@ -54,12 +60,6 @@ module voice
 		.en(ad_open),
 		.i_data(i_ad_data),
 		.o_data(ad_data));
-		
-	DIVCLK #(2) divclk3 (i_clk_sys50m, o_clk_ad25m);
-	DIVCLK #(5) divclk4 (i_clk_sys50m, o_clk_da);
-	DIVCLK #(50) divclk0 (i_clk_sys50m, clk_red_1us);
-	DIVCLK #(50000) divclk1 (i_clk_sys50m, clk_num_1ms);
-	DIVCLK #(25000000) divclk2 (i_clk_sys50m, clk_500ms);
 	
 	
 	wire [31:0] result;
