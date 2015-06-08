@@ -2,7 +2,7 @@
 
 #define EXPR 0x04C11DB7
 #define EXPRH8 4
-#define LSB
+//#define LSB
 unsigned int map[256];
 
 struct Reg32
@@ -148,59 +148,6 @@ struct Reg8
 	}
 };
 
-unsigned int computmap(unsigned char head)
-{
-	unsigned int add[8];
-
-	for (int i = 7; i >= 0; i--)
-	{
-		if (128 & head)
-		{
-			add[i] = EXPR << i;
-			head <<= 1;
-			head ^= EXPRH8;
-		}
-		else
-		{
-			add[i] = 0;
-			head <<= 1;
-		}
-	}
-	
-	unsigned int sum = 0;
-
-	for (int i = 7; i >= 0; i--)
-	{
-		sum ^= add[i];
-	}
-	
-	return sum;
-}
-
-unsigned int comput8(unsigned int r, unsigned char d)
-{
-	r ^= d << 24;
-	unsigned char index = (r & 0xFF000000) >> 24;
-
-	unsigned int add = map[index];
-
-	r <<= 8;
-
-	return r^add;
-}
-
-unsigned int comput1(unsigned int r, unsigned char d)
-{
-	r ^= (d & 1) << 31;
-	unsigned char index = (r & 0x80000000) >> 31;
-
-	unsigned int add = map[index];
-
-	r <<= 1;
-
-	return r^add;
-}
-
 unsigned int comput1p(unsigned int r, unsigned char d)
 {
 	Reg32 ro(r);
@@ -289,34 +236,14 @@ unsigned int comput8p(unsigned int r, unsigned char d)
 	return rn.un.r;
 }
 
-int main0()
+int main1()
 {
-	int a;
-
-	for (int i = 0; i < 256; i++)
-	{
-		map[i] = computmap((unsigned char)i);
-	}
-
-
 	unsigned long long x;
 	unsigned int r = 0;
 
-	x = 0xAA9CAAAA05FF0000;
-	r = 0;
-	for (int i = 0; i < 64; i++)
-	{
-		unsigned char d = (x & 0x8000000000000000) >> 63;
-		r = comput1(r, d);
-		x <<= 1;
-	}
-
-	printf("%X\n", r);
-
-
-
-	x = 0xAA9CAAAA05FF0000;
-	r = 0;
+	
+	x = 0x0200000000050200;
+	r = 0xFFFFFFFF;
 	for (int i = 0; i < 64; i++)
 	{
 		unsigned char d = (x & 0x8000000000000000) >> 63;
@@ -324,12 +251,12 @@ int main0()
 		x <<= 1;
 	}
 
-	printf("%X\n", r);
+	//printf("%X\n", r);
 
 
-	x = 0xAA9CAAAA05FF0000;
-	r = 0;
-	for (int i = 0; i < 8; i++)
+	x = 0x0200000000050200;
+	r = 0xFFFFFFFF;
+	for (int i = 0; i < 1; i++)
 	{
 		unsigned char d = (x & 0xFF00000000000000) >> 56;
 		r = comput8p(r, d);
@@ -338,6 +265,7 @@ int main0()
 
 	printf("%X\n", r);
 
+	int a;
 	scanf_s("%d", &a);
 
 	return 0;

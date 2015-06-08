@@ -98,6 +98,7 @@ module fifo
 			empty <= 1;
 			_waddr_gray_rclk <= 0;
 			waddr_gray_rclk <= 0;
+			raddr_gray <= 0;
 		end
 		else
 		begin

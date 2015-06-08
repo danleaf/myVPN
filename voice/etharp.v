@@ -26,7 +26,7 @@ module etharp
 	reg [7:0] state,state_next;
 	reg [7:0] addr[0:9];			//0~5 is MAC, 6~9 is IP
 	reg [3:0] wr_cnt,addr_idx;
-	reg [5:0] hdr_idx;	
+	reg [5:0] hdr_idx,next_hdr_idx;	
 	reg [7:0] hdr_byte;
 	reg wr_hdr_en,ready,trig,set_local;
 	
@@ -83,7 +83,8 @@ module etharp
 	always@(posedge i_clk or negedge i_rst_n)
 	if(!i_rst_n)
 	begin
-		hdr_idx <= 0;	
+		hdr_idx <= 0;
+		next_hdr_idx <= 0;	
 		hdr_byte <= 0;
 		wr_hdr_en <= 0;
 		addr_idx <= 0;
@@ -96,29 +97,30 @@ module etharp
 			wr_cnt <= 0;
 			wr_hdr_en <= 0;
 			ready <= 0;
-			hdr_idx <= 0;
+			next_hdr_idx <= 0;
 			addr_idx <= 0;
 		end
 		ST_SET_SRCIP:
 		begin
 			{addr[0],addr[1],addr[2],addr[3]} <= {i_ip0,i_ip1,i_ip2,i_ip3};
-			hdr_idx <= SENDERIP_OFFSET;
+			next_hdr_idx <= SENDERIP_OFFSET;
 		end
 		ST_SET_DSTADDR:
 		begin
 			{addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]} <= {i_mac0,i_mac1,i_mac2,i_mac3,i_mac4,i_mac5};
 			{addr[6],addr[7],addr[8],addr[9]} <= {i_ip0,i_ip1,i_ip2,i_ip3};
-			hdr_idx <= DSTMAC_OFFSET;
+			next_hdr_idx <= DSTMAC_OFFSET;
 		end
 		ST_WR_SRCIP:
 		begin
 			wr_cnt <= wr_cnt + 1'd1;
 			wr_hdr_en <= 1'd1;
 			hdr_byte <= addr[addr_idx];
+			hdr_idx <= next_hdr_idx;
 			
 			if(wr_cnt != 4'd3)
 			begin
-				hdr_idx <= hdr_idx + 1'd1;
+				next_hdr_idx <= next_hdr_idx + 1'd1;
 				addr_idx <= addr_idx + 1'd1;
 			end
 		end
@@ -127,15 +129,16 @@ module etharp
 			wr_cnt <= wr_cnt + 1'd1;
 			wr_hdr_en <= 1'd1;
 			hdr_byte <= addr[addr_idx];
+			hdr_idx <= next_hdr_idx;
 			
 			if(wr_cnt != 4'd5)
 			begin
-				hdr_idx <= hdr_idx + 1'd1;
+				next_hdr_idx <= next_hdr_idx + 1'd1;
 				addr_idx <= addr_idx + 1'd1;
 			end
 			else
 			begin
-				hdr_idx <= TARGETADDR_OFFSET;
+				next_hdr_idx <= TARGETADDR_OFFSET;
 				addr_idx <= 0;
 			end
 		end

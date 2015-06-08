@@ -3,23 +3,12 @@
 
 module test();
   reg clk,rst_n;
-  
-reg trig;
-  
-
-wire ready,wren;
-  
-
-wire [4:0] iph_idx;
-  
-
-wire [7:0] byte;
-  
-
-  
-
-
-reg  [7:0] iph [19:0];
+  reg trig;
+  wire ready,wren;
+  wire [4:0] iph_idx;
+  wire [7:0] byte;
+  
+  reg  [7:0] iph [19:0];
   reg [1:0] cmd;
   
   initial
@@ -32,22 +21,14 @@ reg  [7:0] iph [19:0];
     #7 rst_n = 1'b1;
     #2 trig =  1'd1;
     #8 trig = 0;
-    
-#160 cmd = 2;
-    
-#8  cmd = 0;
-    
-#160 trig  = 1;
-    
-#8  trig =  0;
-    
-#160 cmd = 1;
-    
-#8  cmd = 0;
-    
-#160 trig  = 1;
-    
-#8  trig =  0;
+    #160 cmd = 2;
+    #8  cmd = 0;
+    #160 trig  = 1;
+    #8  trig =  0;
+    #160 cmd = 1;
+    #8  cmd = 0;
+    #160 trig  = 1;
+    #8  trig =  0;
   end
 
   always #4 clk = ~clk;
@@ -63,14 +44,12 @@ ip i0
 (
 	.i_clk(clk),
 	.i_rst_n(rst_n),
-	
-.i_trig(trig),
+	.i_trig(trig),
 	.i_data_length(16'd800),
 	.i_ip0(8'd192),
 	.i_ip1(8'd168),
 	.i_ip2(8'd1),
-	
-.i_ip3(8'd253),
+	.i_ip3(8'd253),
 	.i_cmd(cmd),					
 	.o_iph_idx(iph_idx),
 	.o_iph_byte(byte),	

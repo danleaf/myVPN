@@ -5,18 +5,20 @@
 using namespace std;
 
 unsigned char data[] = { 0x54, 0,	
-						0x3, 0x34,	
+						0, 0x7c,	
 						0, 0,		
 						255, 17,	
-						192, 168, 1, 5, 
-						255, 255, 255, 255 
+						192, 168, 1, 0xaa, 
+						192, 168, 1, 5 
 };
 
-unsigned char data2[] = { 
-	0x3, 0x34 
-	//192, 168, 1, 5,
-	//255, 255, 255, 255 
+unsigned char data1[] = { 0, 0x20,	
+						192, 168, 1, 5,
+						192, 168, 1, 4
 };
+
+unsigned char data2[] = //{ 0, 0 }; 
+						{ 0, 0x20 };
 
 void func1()
 {
@@ -34,12 +36,12 @@ void func1()
 
 void func2()
 {
-	int sum = 0;
+	int sum = 0x5312;
 	int c = 0;
 
-	for (int i = sizeof(data) - 2; i >= 0; i -= 2)
+	for (int i = sizeof(data1) - 2; i >= 0; i -= 2)
 	{
-		sum = sum + data[i] * 256 + data[i + 1] + c;
+		sum = sum + data1[i] * 256 + data1[i + 1] + c;
 		c = (sum >> 16) & 1;
 		sum &= 0xffff;
 	}
@@ -54,7 +56,7 @@ void func2()
 void func3()
 {
 	unsigned short tmp = 0;
-	unsigned short sum = 0x14c0;//51049;
+	unsigned short sum = 0xd66c;
 	unsigned short c = 0;
 	bool sig = false;
 
@@ -109,18 +111,6 @@ int main()
 	func1();
 	func2();
 	func3();
-
-
-	unsigned long vs[] = { (unsigned long)dummys, (unsigned long)compares };
-	int(*abc)() = dummys;
-	int(*abc2)() = dummys;
-	long a = *(long*)abc;
-	i = abc();
-	i = dummys();
-	printf("dummys %lu,compares %lu\n", vs[0], vs[1]);
-	printf("dummys %lu,compares %lu\n", (unsigned long)dummys, (unsigned long)compares);
-
-
 	cin >> i;
 	return 0;
 }

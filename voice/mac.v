@@ -31,6 +31,7 @@ module mac
 	reg eth_txen,txen,rxdv,tx_trig,tx_over;
 	reg [7:0] eth_txd,txd,indata,rxd;
 	reg [1:0] crc_idx;
+	reg calcCrc;
 	
 	wire [7:0] crc0,crc1,crc2,crc3,rddata;
 	
@@ -43,7 +44,6 @@ module mac
 	
 	wire lastPdu = i_last_data;
 	wire lastFcs = (crc_idx == 2'd3);
-	wire calcCrc = (tx_state == ST_SEND_PDU || tx_state == ST_SEND_PRE_FCS);
 	
 	always@(*)
 	case(tx_state)
@@ -86,6 +86,9 @@ module mac
 	begin
 		eth_txen <= 0;
 		eth_txd <= 0;
+		txen <= 0;
+		txd <= 0;
+		calcCrc <= 0;
 	end
 	else
 	begin		
@@ -96,9 +99,13 @@ module mac
 		begin
 			{eth_txd,txd} <= {txd,i_data};
 			{eth_txen,txen} <= {txen,1'b1};
+			calcCrc <= 1'd1;
 		end
 		ST_SEND_PRE_FCS:
+		begin
 			eth_txd <= txd;
+			calcCrc <= 0;
+		end
 		ST_SEND_FCS:
 		begin
 			case(crc_idx)
@@ -112,6 +119,7 @@ module mac
 		ST_SEND_OVER:
 		begin
 			eth_txen <= 0;
+			txen <= 0;
 			tx_over <= 1'd1;
 		end
 		endcase
@@ -120,7 +128,14 @@ module mac
 			crc_idx <= 0;
 	end
 	
-	crc crc_inst(i_clk,i_rst_n&tx_state!=ST_SEND_OVER,calcCrc,txd,{crc0,crc1,crc2,crc3});
+	crc crc_inst
+	(
+		.clk(i_clk),
+		.rst_n(i_rst_n&tx_state!=ST_SEND_OVER),
+		.en(calcCrc),
+		.d(txd),
+		.crc({crc0,crc1,crc2,crc3})
+	);
 	
 	wire fifo_empty;
 	
@@ -129,7 +144,6 @@ module mac
 	begin
 		rxdv <= 0;
 		rxd <= 0;
-		o_rx <= 0;
 	end
 	else
 	begin
@@ -137,8 +151,13 @@ module mac
 			rxd <= i_eth_rxd;
 			
 		rxdv <= i_eth_rxdv;
-		o_rx <= !fifo_empty;
 	end
+	
+	always@(posedge i_clk or negedge i_rst_n)
+	if(!i_rst_n)
+		o_rx <= 0;
+	else
+		o_rx <= !fifo_empty;
 	
 	fifo #(4,8) rx_fifo
 	(

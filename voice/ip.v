@@ -15,12 +15,12 @@ module ip
 	localparam DSTIP_OFFSET = 5'd16;
 	localparam CHECKSUM_OFFSET = 5'd10;
 	localparam IP_HEADER_LENGTH = 5'd20;
-	localparam INIT_CHECKSUM = 16'h14C0;
+	localparam INIT_CHECKSUM = 16'hD66C;
 	localparam INIT_CHECKSUM_WITHOUT_IP = 16'h5312;
 	localparam CMD_SET_SRCIP = 2'd1;
 	localparam CMD_SET_DSTIP = 2'd2;
-	localparam INIT_SRCIP = 32'h_C0_A8_01_05;
-	localparam INIT_DSTIP = 32'h_FF_FF_FF_FF;
+	localparam INIT_SRCIP = 32'h_C0_A8_01_04;
+	localparam INIT_DSTIP = 32'h_C0_A8_01_05;
 	
 
 	localparam ST_IDEL = 8'd1;

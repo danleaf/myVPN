@@ -46,3 +46,30 @@ module dualram8
 		endcase
 
 endmodule
+
+module altdualram (
+	clock,
+	data,
+	rdaddress,
+	wraddress,
+	wren,
+	q);
+
+	input	  clock;
+	input	[7:0]  data;
+	input	[12:0]  rdaddress;
+	input	[12:0]  wraddress;
+	input	  wren;
+	output	[7:0]  q;
+	
+	reg [7:0] mem [0:8191];
+	
+	assign q = mem[rdaddress];
+	
+	always@(posedge clock)
+	if(wren)
+	  mem[wraddress] <= data;
+	
+
+endmodule
+
