@@ -65,6 +65,7 @@ module eth
 		next_eth_idx <= 0;	
 		eth_byte <= 0;
 		wr_eth_en <= 0;
+		eth_idx <= 0;
 	end
 	else
 	begin
