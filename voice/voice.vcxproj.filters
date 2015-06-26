@@ -168,6 +168,9 @@
     <None Include="triger.v">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="voice.csv">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

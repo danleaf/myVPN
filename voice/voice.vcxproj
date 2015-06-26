@@ -119,6 +119,7 @@
     <None Include="top0.v" />
     <None Include="triger.v" />
     <None Include="udp.v" />
+    <None Include="voice.csv" />
     <None Include="voice.sdc" />
     <None Include="voice.v" />
     <None Include="wave_fifo.v" />
