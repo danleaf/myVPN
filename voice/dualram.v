@@ -47,7 +47,7 @@ module dualram8
 
 endmodule
 
-module altdualram (
+module altdualram0 (
 	clock,
 	data,
 	rdaddress,

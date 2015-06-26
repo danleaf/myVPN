@@ -267,6 +267,9 @@ module eth_commu
 	if(!i_rst_n)
 	begin
 		data_send_trig <= 0;
+		arp_trig <= 0;
+		set_local_trig <= 0;
+		set_dest_trig <= 0;
 		
 		{udp_hdr[0],udp_hdr[1],udp_hdr[2],udp_hdr[3]} <= {PORT_NUMBER,PORT_NUMBER};
 		{udp_hdr[6],udp_hdr[7]} <= 0;
@@ -326,13 +329,6 @@ module eth_commu
 		arp_send_req <= 0;
 		set_local_req <= 0;
 		set_dest_req <= 0;
-		data_send_trig <= 0;
-		arp_trig0 <= 0;
-		arp_trig <= 0;
-		set_local_trig0 <= 0;
-		set_local_trig <= 0;
-		set_dest_trig0 <= 0;
-		set_dest_trig <= 0;
 	end
 	else
 	begin
@@ -619,6 +615,8 @@ module eth_commu
 		o_cmd <= 0;
 		o_param <= 0;
 		o_cmd_come <= 0;
+		set_local_trig0 <= 0;
+		set_dest_trig0 <= 0;
 	end
 	else
 	begin		
