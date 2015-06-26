@@ -156,6 +156,18 @@
     <None Include="eth_session.v">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="altdualram_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll100m.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="pll100m_bb.v">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="triger.v">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

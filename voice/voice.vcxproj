@@ -77,6 +77,7 @@
     <None Include="AD_FIFO.v" />
     <None Include="ad_wrapper.v" />
     <None Include="altdualram.v" />
+    <None Include="altdualram_bb.v" />
     <None Include="checksum.v" />
     <None Include="cntt.v" />
     <None Include="cntt_bb.v" />
@@ -100,6 +101,8 @@
     <None Include="mac.v" />
     <None Include="NUMSHOW.v" />
     <None Include="packet.v" />
+    <None Include="pll100m.v" />
+    <None Include="pll100m_bb.v" />
     <None Include="pll125m.v" />
     <None Include="pll125m_bb.v" />
     <None Include="pll133m.v" />
@@ -114,6 +117,7 @@
     <None Include="testip.v" />
     <None Include="top.v" />
     <None Include="top0.v" />
+    <None Include="triger.v" />
     <None Include="udp.v" />
     <None Include="voice.sdc" />
     <None Include="voice.v" />
